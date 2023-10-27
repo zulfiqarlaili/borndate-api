@@ -83,14 +83,6 @@ async def get_about_self(aboutMe: AboutMe):
         raise HTTPException(status_code=404, detail=error)
     return response
 
-@app.get("/test2/")
-async def test(request: Request):
-    print(request.headers)
-    origin = request.headers.get("Origin")
-    print(origin)
-    return {"ok": "Success"}
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=3001)
