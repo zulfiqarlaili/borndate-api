@@ -19,11 +19,11 @@ class AboutMe(BaseModel):
     physical: str
     ending: str
 
-
+frontend_domain = "https://www.borndate.duckdns.org"
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[frontend_domain],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
