@@ -11,6 +11,8 @@ from PIL import Image
 from logging.config import dictConfig
 import log_config
 from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI 
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 dictConfig(log_config.logger)
 
@@ -20,15 +22,20 @@ class AboutMe(BaseModel):
     ending: str
 
 frontend_domain = "https://www.borndate.duckdns.org"
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[frontend_domain],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app = FastAPI()
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[frontend_domain],
+#     allow_credentials=False,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
+app = FastAPI()
+
+app.add_middleware(
+    TrustedHostMiddleware, allowed_hosts=[frontend_domain] 
+)
 
 @app.get("/")
 def read_root():
@@ -81,3 +88,8 @@ async def get_about_self(aboutMe: AboutMe):
     if response is None:
         raise HTTPException(status_code=404, detail=error)
     return response
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=3001)
