@@ -21,21 +21,15 @@ class AboutMe(BaseModel):
     physical: str
     ending: str
 
-frontend_domain = "https://borndate.web.app/"
-# app = FastAPI()
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=[frontend_domain],
-#     allow_credentials=False,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
 app = FastAPI()
-
 app.add_middleware(
-    TrustedHostMiddleware, allowed_hosts=[frontend_domain] 
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
 
 @app.get("/")
 def read_root():
