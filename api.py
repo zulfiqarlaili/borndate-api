@@ -21,7 +21,7 @@ class AboutMe(BaseModel):
     physical: str
     ending: str
 
-frontend_domain = "https://www.borndate.duckdns.org"
+frontend_domain = "https://borndate.web.app/"
 # app = FastAPI()
 # app.add_middleware(
 #     CORSMiddleware,
