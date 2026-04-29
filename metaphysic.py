@@ -11,6 +11,30 @@ element_map = {
     'earth': [5]
 }
 
+element_actions = {
+    'Wood': 'Choose one idea and give it a practical first step today.',
+    'Fire': 'Channel your energy into one clear priority before starting something new.',
+    'Earth': 'Create stability by finishing a small promise you made to yourself.',
+    'Metal': 'Use your discipline gently: organize one area without over-controlling it.',
+    'Water': 'Trust your intuition, then write down the facts before deciding.',
+}
+
+supportive_pairs = {
+    frozenset(['Wood', 'Fire']),
+    frozenset(['Fire', 'Earth']),
+    frozenset(['Earth', 'Metal']),
+    frozenset(['Metal', 'Water']),
+    frozenset(['Water', 'Wood']),
+}
+
+challenging_pairs = {
+    frozenset(['Wood', 'Earth']),
+    frozenset(['Earth', 'Water']),
+    frozenset(['Water', 'Fire']),
+    frozenset(['Fire', 'Metal']),
+    frozenset(['Metal', 'Wood']),
+}
+
 
 def single_digit_sum(num1, num2):
     result = num1 + num2
@@ -37,6 +61,13 @@ def get_element_color(number):
         9: wood
     }
     return elements.get(number, "Invalid input")
+
+
+def get_element_name(number):
+    for element, range_ in element_map.items():
+        if number in range_:
+            return element.capitalize()
+    return 'Unknown'
 
 
 def get_element_number(name: str):
@@ -276,6 +307,145 @@ def analysis(input):
             return [dominant_elements, physical, spirit, ending]
         else:
             return [{}, physical, spirit, ending]
+
+
+def get_dominant_elements(sorted_array):
+    element_counts = defaultdict(int)
+    for item in sorted_array:
+        for element, element_values in element_map.items():
+            if item in element_values:
+                element_counts[element] += 1
+
+    dominant_elements = {element: count for element,
+                         count in element_counts.items() if count > 4}
+    if not dominant_elements:
+        dominant_elements = {element: count for element,
+                             count in element_counts.items() if count == 4}
+
+    element_list = []
+    for key, value in dominant_elements.items():
+        element_list.append(get_element_analysis(key, value))
+    return sorted(element_list, key=lambda element: element['count'], reverse=True)
+
+
+def get_chart_explanations(spirit_number, physical_number, ending_number, dominant_elements):
+    dominant_name = dominant_elements[0]['name'] if dominant_elements else get_element_name(spirit_number)
+    dominant_text = dominant_elements[0]['personality'] if dominant_elements else knowledge_base[dominant_name]['Personality']
+    return [
+        {
+            'key': 'spirit',
+            'title': 'Spirit Number',
+            'number': spirit_number,
+            'description': 'Your inner drive and the style of energy you naturally return to.',
+            'meaning': knowledge_base['Physical'][spirit_number],
+        },
+        {
+            'key': 'physical',
+            'title': 'Physical Number',
+            'number': physical_number,
+            'description': 'How your strengths tend to show up in practical choices and daily behavior.',
+            'meaning': knowledge_base['Physical'][physical_number],
+        },
+        {
+            'key': 'ending',
+            'title': 'Ending Number',
+            'number': ending_number,
+            'description': 'The longer-term pattern this chart points toward when your traits are developed.',
+            'meaning': knowledge_base['Ending'].get(ending_number, 'This ending number points to a personal outcome shaped by your choices, habits, and environment.'),
+        },
+        {
+            'key': 'dominant',
+            'title': 'Dominant Element',
+            'number': None,
+            'description': 'The element that appears most strongly in your chart.',
+            'meaning': f'{dominant_name}: {dominant_text}.',
+        },
+    ]
+
+
+def get_personal_reading(physical_number, spirit_number, ending_number, dominant_elements):
+    primary = dominant_elements[0] if dominant_elements else get_element_analysis(get_element_name(spirit_number), 0)
+    element_name = primary['name']
+    return {
+        'headline': f'{element_name} energy with a {spirit_number}-{physical_number}-{ending_number} core pattern',
+        'summary': f"You carry {primary['personality']} energy. Your spirit number suggests {knowledge_base['Physical'][spirit_number]} Your physical number adds this visible pattern: {knowledge_base['Physical'][physical_number]}",
+        'strengths': primary['strength_and_weakness'],
+        'relationship': primary['relationship'],
+        'growth': primary['advice'],
+        'today': element_actions.get(element_name, 'Choose one small action that supports your strongest trait today.'),
+    }
+
+
+def build_analysis_response(input):
+    input_array = list(map(str, input))
+    if input[4:8] == "2000":
+        input_array[4:8] = list("2005")
+
+    sorted_array = sort_number_to_star_array(input_array)
+    physical_number = sorted_array[13]
+    spirit_number = sorted_array[4]
+    ending_number = sorted_array[16]
+    dominant_elements = get_dominant_elements(sorted_array)
+
+    return {
+        'dob': input,
+        'core_numbers': {
+            'spirit': {
+                'number': spirit_number,
+                'element': get_element_name(spirit_number),
+                'meaning': knowledge_base['Physical'][spirit_number],
+            },
+            'physical': {
+                'number': physical_number,
+                'element': get_element_name(physical_number),
+                'meaning': knowledge_base['Physical'][physical_number],
+            },
+            'ending': {
+                'number': ending_number,
+                'element': get_element_name(ending_number),
+                'meaning': knowledge_base['Ending'].get(ending_number, 'This ending number points to a personal outcome shaped by your choices, habits, and environment.'),
+            },
+        },
+        'dominant_elements': dominant_elements,
+        'personal_reading': get_personal_reading(physical_number, spirit_number, ending_number, dominant_elements),
+        'chart_explanations': get_chart_explanations(spirit_number, physical_number, ending_number, dominant_elements),
+        'weekly_insight': {
+            'title': 'This week',
+            'message': element_actions.get(dominant_elements[0]['name'], element_actions[get_element_name(spirit_number)]) if dominant_elements else element_actions[get_element_name(spirit_number)],
+        },
+    }
+
+
+def build_compatibility_response(first_dob, second_dob):
+    first = build_analysis_response(first_dob)
+    second = build_analysis_response(second_dob)
+    first_element = first['dominant_elements'][0]['name'] if first['dominant_elements'] else first['core_numbers']['spirit']['element']
+    second_element = second['dominant_elements'][0]['name'] if second['dominant_elements'] else second['core_numbers']['spirit']['element']
+    pair = frozenset([first_element, second_element])
+
+    if first_element == second_element:
+        summary = f'Both readings carry strong {first_element} energy, so the connection can feel familiar and easy to understand.'
+        tension = 'The same strengths can also amplify the same blind spots, so balance comes from taking turns leading.'
+    elif pair in supportive_pairs:
+        summary = f'{first_element} and {second_element} form a supportive pattern. Each person can add something the other naturally responds to.'
+        tension = 'The main risk is moving at different speeds or assuming support means agreement on every detail.'
+    elif pair in challenging_pairs:
+        summary = f'{first_element} and {second_element} can create a growth-oriented dynamic. The connection may be useful, but it needs patience.'
+        tension = 'Differences may show up in communication style, timing, or how each person handles pressure.'
+    else:
+        summary = f'{first_element} and {second_element} create a mixed pattern with room for both support and learning.'
+        tension = 'The connection works best when expectations are made clear early.'
+
+    return {
+        'first': first,
+        'second': second,
+        'compatibility': {
+            'summary': summary,
+            'strengths': 'This pairing works best when both people use their strongest traits as contributions instead of control points.',
+            'tension': tension,
+            'advice': 'Use the reading as a conversation starter: compare what feels accurate, what feels different, and what each person needs to feel respected.',
+        }
+    }
 
 
 def get_element_analysis(element,count):

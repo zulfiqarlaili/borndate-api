@@ -38,6 +38,8 @@ def read_root():
 
 @app.get("/result/{dob}")
 async def read_dob(dob: str):
+    if not metaphysic.check_input(dob):
+        raise HTTPException(status_code=400, detail="DOB must be in ddmmyyyy format.")
     input_array = list(map(str, dob))
     if dob[4:8] == "2000":
         input_array[4:8] = list("2005")
@@ -51,6 +53,8 @@ async def read_dob(dob: str):
 
 @app.get("/element/{dob}")
 async def get_dominant_element(dob: str):
+    if not metaphysic.check_input(dob):
+        raise HTTPException(status_code=400, detail="DOB must be in ddmmyyyy format.")
     [dominant_dict, physical, spirit, ending] = metaphysic.analysis(dob)
     element_list = []
     for key, value in dominant_dict.items():
@@ -67,6 +71,20 @@ async def get_dominant_element(dob: str):
     }
 
     return JSONResponse(content=analyze_element_object)
+
+
+@app.get("/analysis/{dob}")
+async def get_analysis(dob: str):
+    if not metaphysic.check_input(dob):
+        raise HTTPException(status_code=400, detail="DOB must be in ddmmyyyy format.")
+    return JSONResponse(content=metaphysic.build_analysis_response(dob))
+
+
+@app.get("/compatibility/{first_dob}/{second_dob}")
+async def get_compatibility(first_dob: str, second_dob: str):
+    if not metaphysic.check_input(first_dob) or not metaphysic.check_input(second_dob):
+        raise HTTPException(status_code=400, detail="DOB must be in ddmmyyyy format.")
+    return JSONResponse(content=metaphysic.build_compatibility_response(first_dob, second_dob))
 
 
 def cleanUpFile(filename):
