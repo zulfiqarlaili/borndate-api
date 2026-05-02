@@ -1,18 +1,12 @@
 import asyncio
-import io
-import os
 import ai
 import metaphysic
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from PIL import Image
 from logging.config import dictConfig
 import log_config
-from fastapi import FastAPI, HTTPException
-from fastapi import FastAPI 
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 dictConfig(log_config.logger)
 
@@ -35,20 +29,6 @@ app.add_middleware(
 def read_root():
     return {"Server": "Running"}
 
-
-@app.get("/result/{dob}")
-async def read_dob(dob: str):
-    if not metaphysic.check_input(dob):
-        raise HTTPException(status_code=400, detail="DOB must be in ddmmyyyy format.")
-    input_array = list(map(str, dob))
-    if dob[4:8] == "2000":
-        input_array[4:8] = list("2005")
-    image_name = metaphysic.begin_drawing(dob, input_array, True)
-    buffer = io.BytesIO()
-    img = Image.open(image_name)
-    img.save(buffer, format="PNG")
-    cleanUpFile(image_name)
-    return Response(content=buffer.getvalue(), media_type="image/png")
 
 
 @app.get("/element/{dob}")
@@ -87,11 +67,6 @@ async def get_compatibility(first_dob: str, second_dob: str):
     return JSONResponse(content=metaphysic.build_compatibility_response(first_dob, second_dob))
 
 
-def cleanUpFile(filename):
-    if os.path.exists(filename):
-        os.remove(filename)
-    else:
-        print("The file does not exist")
 
 
 @app.post("/aboutMe/")
